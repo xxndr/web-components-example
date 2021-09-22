@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+  </head>
+  <body>
+    <style>
+      my-tabs {
+        display: block;
+        margin-bottom: 1rem;
+      }
+
+      [role="tab"] {
+        background: #ddd;
+        transition: 0.2s ease transform;
+        border: 1px solid #ccc;
+      }
+
+      [role="tab"][aria-selected="true"] {
+        background: #fff;
+        border-bottom: none;
+        transform: translate3d(0, 2px, 0);
+      }
+
+      [role="tabpanel"] {
+        padding: 10px;
+        border: 1px solid #ccc;
+      }
+    </style>
+
+    <my-tabs>
+      <div role="tablist">
+        <button aria-selected="true" tabindex="0" role="tab">One</button>
+        <button role="tab" tabindex="-1" aria-selected="false">Two</button>
+        <button role="tab" tabindex="-1" aria-selected="false">Three</button>
+      </div>
+      <div
+        aria-selected="true"
+        role="tabpanel"
+        aria-controls="panel-1"
+        tabindex="0"
+      >
+        One
+      </div>
+      <div hidden role="tabpanel" aria-controls="panel-2" tabindex="-1">
+        Two
+      </div>
+      <div hidden role="tabpanel" aria-controls="panel-3" tabindex="-1">
+        Three
+      </div>
+    </my-tabs>
+    <my-tabs>
+      <div role="tablist">
+        <button aria-selected="true" tabindex="0" role="tab">One</button>
+        <button role="tab" tabindex="-1">Two</button>
+        <button role="tab" tabindex="-1">Three</button>
+        <button role="tab" tabindex="-1">Four</button>
+      </div>
+      <div
+        aria-selected="true"
+        role="tabpanel"
+        aria-controls="panel-1"
+        tabindex="0"
+      >
+        One
+      </div>
+      <div hidden role="tabpanel" aria-controls="panel-2" tabindex="-1">
+        Two
+      </div>
+      <div hidden role="tabpanel" aria-controls="panel-3" tabindex="-1">
+        Three
+      </div>
+      <div hidden role="tabpanel" aria-controls="panel-3" tabindex="-1">
+        Four
+      </div>
+    </my-tabs>
+    <script>
+      const getTabs = (element) => {
+        const tabs = element.querySelectorAll("[role=tablist] [role=tab]");
+        return [...tabs];
+      };
+
+      const getPanels = (element) => {
+        const panels = element.querySelectorAll("[role=tabpanel]");
+        return [...panels];
+      };
+
+      const selectTab = (element, index) => {
+        const tabs = getTabs(element);
+        tabs.forEach((tab, tabIndex) => {
+          if (index === tabIndex) {
+            tab.setAttribute("aria-selected", true);
+            tab.focus();
+            tab.setAttribute("tabindex", 0);
+          } else {
+            tab.setAttribute("aria-selected", false);
+            tab.setAttribute("tabindex", -1);
+          }
+        });
+
+        const panels = getPanels(element);
+        panels.forEach((panel, panelIndex) => {
+          if (index === panelIndex) {
+            panel.hidden = false;
+            panel.setAttribute("aria-selected", true);
+            panel.setAttribute("tabindex", 0);
+          } else {
+            panel.setAttribute("aria-selected", false);
+            panel.setAttribute("tabindex", -1);
+            panel.hidden = true;
+          }
+        });
+
+        element.dispatchEvent(
+          new Event("my-tab-change", {
+            bubbles: true,
+            detail: {
+              relatedTarget: panels[index],
+            },
+          })
+        );
+      };
+
+      class MyTabs extends HTMLElement {
+        constructor() {
+          super();
+
+          this.addEventListener("keydown", (event) => {
+            const tabs = getTabs(this);
+            const currentIndex = tabs.indexOf(
+              tabs.find((tab) => tab.matches('[aria-selected="true"]'))
+            );
+
+            if (event.code === "ArrowLeft") {
+              let newIndex = currentIndex - 1;
+              if (newIndex < 0) {
+                newIndex = 0;
+              }
+              selectTab(this, newIndex);
+            } else if (event.code === "ArrowRight") {
+              let newIndex = currentIndex + 1;
+              if (newIndex >= tabs.length) {
+                newIndex = tabs.length - 1;
+              }
+              selectTab(this, newIndex);
+            }
+          });
+
+          this.addEventListener("click", (event) => {
+            const tab = event.target.closest("[role=tab]");
+            const tabs = getTabs(this);
+            const tabIndex = tabs.indexOf(tab);
+
+            if (!tab?.closest("[role=tablist]")) return;
+            selectTab(this, tabIndex);
+          });
+        }
+      }
+      customElements.define("my-tabs", MyTabs);
+    </script>
+  </body>
+</html>
